@@ -1,0 +1,25 @@
+{
+  "name": "jpeg-crawler",
+  "version": "0.0.1",
+  "description": "Utility to crawl a directory of images and create JSON contain image metadata",
+  "main": "crawl-jpegs.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/misteroh/jpegCrawler.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/misteroh/jpegCrawler/issues"
+  },
+  "homepage": "https://github.com/misteroh/jpegCrawler#readme",
+  "dependencies": {
+    "exif": "^0.6.0",
+    "image-size": "^0.5.0",
+    "jsonfile": "^2.3.1",
+    "q": "^1.4.1"
+  }
+}
