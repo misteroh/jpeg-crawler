@@ -1,9 +1,10 @@
 'use strict'
 // requires
 const fs = require('fs');
+const glob = require('glob');
 const q = require('q');
 const jf = require('jsonfile');
-const exif = require('exif').ExifImage;
+const Exif = require('exif').ExifImage;
 
 // globals
 const cwd = process.cwd();
@@ -13,8 +14,6 @@ const outputFilename = args[1] || 'output.json';
 
 function cleanOutput(file) {
 	const dfd = q.defer();
-
-	console.log(`Deleting ${file}...`);
 
 	fs.unlink(file, error => {
 		if (error) {
@@ -27,138 +26,78 @@ function cleanOutput(file) {
 	return dfd.promise;
 }
 
-function createJSONFile(jsonFilename) {
+function createJSONFile(file) {
 	const dfd = q.defer();
 
-    jf.writeFile(jsonFilename, {}, error => {
-		dfd.resolve(`Created ${jsonFilename}`);
+	console.log(`Creating ${file}...`);
+
+    jf.writeFile(file, {}, error => {
+		dfd.resolve(`Created ${file}`);
 	});
 
 	return dfd.promise;
 }
 
-function getEXIFData(filename) {
+function getJPEGs(folder) {
 	const dfd = q.defer();
 
-	console.log(`Scanning ${filename}`);
-
-	try {
-		new exif({ image : filename }, (error, exifData) => {
-			if (error) {
-				dfd.reject(error.message);
-			} else {
-				dfd.resolve(exifData.exif);
-			}
-		});
-	} catch (error) {
-		dfd.reject(error);
-	}
+	glob('testFolder/*.+(jpg|jpeg)', (error, files) => {
+		dfd.resolve(files);
+	});
 
 	return dfd.promise;
 }
 
-function crawlDirectory(directory) {
+function getEXIFOfAllFiles(jpegs) {
+	const dfd = q.defer();
+	const numberOfJpegs = jpegs.length;
+	const output = {
+		images: []
+	};
 
+	function getEXIFOfSingleFile(i) {
+		const filePath = jpegs[i];
+
+		try {
+			new Exif({ image : filePath }, (error, exifData) => {
+				if (error) {
+					return prev;
+				} else {
+					const data = exifData;
+
+					data.filename = filePath.split('/').slice(-1)[0];
+					data.filepath = filePath;
+
+					output.images.push(data);
+
+					if (i < numberOfJpegs - 1) {
+						return getEXIFOfSingleFile(i+1);
+					}
+
+					dfd.resolve(output);
+				}
+			});
+		} catch (error) {
+			return prev;
+		}
+	}
+
+	getEXIFOfSingleFile(0);
+
+	return dfd.promise;
+}
+
+function writeJSONFile(outputFile, data) {
+	console.log(`Writing to ${outputFile}`);
+	
+	return jf.writeFile(outputFile, data);
 }
 
 cleanOutput(outputFilename)
-	.then(response => {
-		console.log(`${response}\nNow crawling the folder "${imageDirectory}"...`);
-		return createJSONFile(outputFilename);
-	}).then(response => {
-		console.log(`${response}`);
-		return getEXIFData('test1.jpg');
-	}).then(response => {
-		jf.writeFile(outputFilename, response)
+	.then(response => createJSONFile(outputFilename))
+	.then(() => getJPEGs('testFolder'))
+	.then(jpegs => getEXIFOfAllFiles(jpegs))
+	.then(exifData => writeJSONFile(outputFilename, exifData))
+	.catch(error => {
+		console.error(error);
 	});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getExif(o) {
-    const file = o.file;
-    let fullPath = o.fullPath;
-    let listOfData = o.listOfData;
-    let currentFolder = o.currentFolder;
-    let dimensions = o.dimensions;
-    let final = o.final;
-
-    try {
-        new Exif({ image : fullPath }, function (error, exifData) {
-            if (error)
-                console.log('Error: '+error.message);
-            else {
-                listOfData.push({
-                    title: 'Title',
-                    src: file,
-                    caption: exifData.image.ImageDescription,
-                    width: dimensions.width,
-                    height: dimensions.height
-                });
-                if (final === true) {
-                    writeJson(currentFolder, listOfData);
-                }
-            }
-        });
-    } catch (error) {
-        console.log('Error: ' + error.message);
-    }
-}
-
-// for (i = 0; i < imageFoldersLength; i++) {
-//     const currentFolder = imageFolders[i],
-//         files = [],
-//         listOfData = [],
-//         lengthOfList,
-//         index = 0;
-//
-//     fs.readdirSync(cwd + '/app/images/' + currentFolder).forEach(function(element) {
-//         if(path.extname(element) === ".jpg") {
-//             files.push(element);
-//         }
-//     });
-//
-//     lengthOfList = files.length;
-//
-//     files.forEach(function(element) {
-//         const fullPath = cwd + '\\app\\images\\' + currentFolder + '\\' + element,
-//             dimensions = sizeOf(fullPath),
-//             final;
-//
-//         index = index + 1;
-//         final = index === lengthOfList ? true : false;
-//
-//         getExif({
-//             file: element,
-//             fullPath: fullPath,
-//             listOfData: listOfData,
-//             currentFolder: currentFolder,
-//             dimensions: dimensions,
-//             final: final
-//         });
-//     });
-// }
