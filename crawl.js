@@ -9,8 +9,8 @@ const Exif = require('exif').ExifImage;
 // globals
 const cwd = process.cwd();
 const args = process.argv.slice(2);
-const imageDirectory = args[0] || cwd;
-const outputFilename = args[1] || 'output.json';
+const outputFilename = args[0] || 'output.json';
+const imageDirectory = args[1] || cwd;
 
 function cleanOutput(file) {
 	const dfd = q.defer();
