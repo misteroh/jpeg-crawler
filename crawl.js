@@ -89,7 +89,7 @@ function getEXIFOfAllFiles(jpegs) {
 
 function writeJSONFile(outputFile, data) {
 	console.log(`Writing to ${outputFile}`);
-	
+
 	return jf.writeFile(outputFile, data);
 }
 
